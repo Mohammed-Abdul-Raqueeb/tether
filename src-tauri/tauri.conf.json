@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schema.tauri.app/config/1",
+  "build": {
+    "beforeDevCommand": "npm run build:ui",
+    "beforeBuildCommand": "npm run build:ui",
+    "devPath": "../ui",
+    "distDir": "../ui",
+    "withGlobalTauri": true
+  },
+  "package": { "productName": "Tether", "version": "0.1.0" },
+  "tauri": {
+    "allowlist": { "all": false, "shell": { "all": false, "open": true } },
+    "bundle": {
+      "active": true,
+      "identifier": "dev.tether.app",
+      "targets": ["deb", "appimage", "dmg", "msi"],
+      "icon": ["icons/icon.png"]
+    },
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:8787 http://localhost:8787; style-src 'self' 'unsafe-inline'"
+    },
+    "windows": [
+      { "title": "Tether", "width": 1120, "height": 760, "minWidth": 680, "resizable": true }
+    ]
+  }
+}
