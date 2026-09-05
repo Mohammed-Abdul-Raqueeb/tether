@@ -14,7 +14,7 @@
       "active": true,
       "identifier": "dev.tether.app",
       "targets": ["deb", "appimage", "dmg", "msi"],
-      "icon": ["icons/icon.png"]
+      "icon": ["icons/icon.ico"]
     },
     "security": {
       "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:8787 http://localhost:8787; style-src 'self' 'unsafe-inline'"
