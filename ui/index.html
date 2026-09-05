@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tether</title>
+<style>
+  /* Two families with clearly separate jobs: a grotesque operates the app, a
+     serif is for reading and writing notes. Nothing decorative uses either. */
+  :root {
+    --paper:   #E6E9E3;
+    --surface: #FBFCF9;
+    --ink:     #1B2420;
+    --dim:     #66736C;
+    --rule:    #C8CFC5;
+    --accent:  #1F5E4A;
+    --conflict:#A8501B;
+    --stale:   #8A6D3B;
+    --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --read: Charter, "Iowan Old Style", Georgia, "Times New Roman", serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--ui); font-size: 15px; line-height: 1.5;
+  }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+
+  /* --- masthead: device identity and connection ------------------------- */
+  header {
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+    padding: 14px 22px; border-bottom: 1px solid var(--rule); background: var(--surface);
+  }
+  header h1 { font-size: 17px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+  .device {
+    font-family: var(--mono); font-size: 12px; color: var(--dim);
+    padding: 3px 8px; border: 1px solid var(--rule); border-radius: 999px;
+  }
+  .spacer { flex: 1 1 auto; }
+
+  /* The connection control is a switch, not a status light: being offline is
+     a thing you choose here, because demonstrating divergence is the point. */
+  .link { display: flex; align-items: center; gap: 8px; }
+  .link button {
+    border: 1px solid var(--rule); background: var(--surface); border-radius: 4px;
+    padding: 5px 12px;
+  }
+  .link button[data-on="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .link .pulse {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--dim);
+  }
+  .link .pulse[data-state="synced"]  { background: var(--accent); }
+  .link .pulse[data-state="behind"]  { background: var(--stale); }
+  .link .pulse[data-state="offline"] { background: var(--rule); border: 1px solid var(--dim); }
+  .link small { color: var(--dim); font-size: 12px; }
+
+  /* --- layout ------------------------------------------------------------ */
+  main { display: grid; grid-template-columns: 1fr 1fr 300px; gap: 0; min-height: calc(100vh - 57px); }
+  @media (max-width: 1080px) { main { grid-template-columns: 1fr; } }
+  section { padding: 20px 22px; border-right: 1px solid var(--rule); }
+  section:last-child { border-right: none; }
+  section > h2 {
+    font-size: 12px; font-weight: 600; color: var(--dim); margin: 0 0 14px;
+  }
+
+  /* --- tasks ------------------------------------------------------------- */
+  .compose { display: flex; gap: 8px; margin-bottom: 16px; }
+  .compose input {
+    flex: 1; padding: 8px 10px; border: 1px solid var(--rule);
+    border-radius: 4px; background: var(--surface);
+  }
+  .compose input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .compose button { border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 4px; padding: 8px 14px; }
+
+  ul.tasks { list-style: none; margin: 0; padding: 0; }
+  ul.tasks li { padding: 9px 0; border-top: 1px solid var(--rule); display: flex; gap: 10px; align-items: flex-start; }
+  ul.tasks li:first-child { border-top: none; }
+  ul.tasks input[type=checkbox] { margin-top: 4px; width: 16px; height: 16px; accent-color: var(--accent); }
+  .task-body { flex: 1; min-width: 0; }
+  .task-title { overflow-wrap: anywhere; }
+  li[data-done="true"] .task-title { color: var(--dim); text-decoration: line-through; }
+  .task-tools { opacity: 0; display: flex; gap: 6px; }
+  ul.tasks li:hover .task-tools, ul.tasks li:focus-within .task-tools { opacity: 1; }
+  .task-tools button { border: none; background: none; color: var(--dim); padding: 2px 4px; font-size: 13px; }
+  .task-tools button:hover { color: var(--conflict); }
+
+  /* A conflict is a question, not an error. Both answers are shown and
+     picking one is a normal edit. */
+  .conflict {
+    margin-top: 7px; padding: 9px 11px; border-left: 3px solid var(--conflict);
+    background: #F6EFE8; border-radius: 0 4px 4px 0;
+  }
+  .conflict p { margin: 0 0 7px; font-size: 13px; color: var(--conflict); }
+  .conflict .choice { display: flex; gap: 8px; margin-top: 5px; align-items: center; }
+  .conflict .choice button {
+    border: 1px solid var(--rule); background: var(--surface); border-radius: 4px;
+    padding: 3px 9px; font-size: 13px;
+  }
+  .conflict .choice span { flex: 1; overflow-wrap: anywhere; font-size: 14px; }
+
+  /* --- notes ------------------------------------------------------------- */
+  .note-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .note-list button {
+    border: 1px solid var(--rule); background: var(--surface); border-radius: 999px;
+    padding: 4px 11px; font-size: 13px;
+  }
+  .note-list button[aria-current="true"] { border-color: var(--accent); color: var(--accent); }
+  textarea {
+    width: 100%; min-height: 340px; padding: 14px; resize: vertical;
+    border: 1px solid var(--rule); border-radius: 4px; background: var(--surface);
+    font-family: var(--read); font-size: 16px; line-height: 1.65;
+  }
+  .hint { color: var(--dim); font-size: 12px; margin-top: 8px; }
+
+  /* --- the ledger: what this device knows -------------------------------- */
+  aside { background: #E1E5DD; }
+  .stat { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; font-size: 13px; }
+  .stat span:last-child { font-family: var(--mono); }
+  .vv { font-family: var(--mono); font-size: 12px; margin: 12px 0; }
+  .vv div { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px dotted var(--rule); }
+  .vv .self { color: var(--accent); font-weight: 600; }
+  .ledger { font-family: var(--mono); font-size: 11.5px; margin-top: 14px; max-height: 260px; overflow-y: auto; }
+  .ledger div { padding: 2px 0; color: var(--dim); border-bottom: 1px dotted var(--rule); }
+  .ledger .in  { color: var(--accent); }
+  .ledger .out { color: var(--ink); }
+  aside h3 { font-size: 12px; font-weight: 600; color: var(--dim); margin: 18px 0 6px; }
+  aside p { font-size: 12px; color: var(--dim); margin: 8px 0 0; }
+  aside a { color: var(--accent); }
+  .danger { margin-top: 14px; border: 1px solid var(--rule); background: transparent; border-radius: 4px; padding: 5px 10px; font-size: 12px; color: var(--dim); }
+
+  .empty { color: var(--dim); font-size: 14px; padding: 10px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Tether</h1>
+  <span class="device" id="device-label">device —</span>
+  <div class="spacer"></div>
+  <div class="link">
+    <span class="pulse" id="pulse" data-state="offline"></span>
+    <small id="link-status">starting up</small>
+    <button id="toggle-link" data-on="true">Connected</button>
+  </div>
+</header>
+
+<main>
+  <section>
+    <h2>Tasks</h2>
+    <div class="compose">
+      <input id="new-task" placeholder="Add a task" autocomplete="off">
+      <button id="add-task">Add</button>
+    </div>
+    <ul class="tasks" id="tasks"></ul>
+    <div class="empty" id="tasks-empty">Nothing yet. Anything you add works offline and syncs when it can.</div>
+  </section>
+
+  <section>
+    <h2>Notes</h2>
+    <div class="note-list" id="note-list"></div>
+    <textarea id="note-body" placeholder="Select a note, or add one above."></textarea>
+    <p class="hint" id="note-hint"></p>
+  </section>
+
+  <aside>
+    <h2>What this device knows</h2>
+    <div class="stat"><span>operations held</span><span id="s-ops">0</span></div>
+    <div class="stat"><span>waiting on causality</span><span id="s-pending">0</span></div>
+    <div class="stat"><span>unsent to relay</span><span id="s-unsent">0</span></div>
+    <div class="stat"><span>local log size</span><span id="s-bytes">0 B</span></div>
+
+    <h3>Version vector</h3>
+    <div class="vv" id="vv"></div>
+
+    <h3>Recent exchange</h3>
+    <div class="ledger" id="ledger"></div>
+
+    <p id="second-device"></p>
+    <button class="danger" id="wipe">Erase this device</button>
+    <p>Erasing removes local data only. Anything already synced comes back from the relay on the next connection.</p>
+  </aside>
+</main>
+
+<script type="module" src="./build/ui/app.js"></script>
+</body>
+</html>

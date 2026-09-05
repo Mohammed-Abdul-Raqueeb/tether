@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": [],
+    "strict": true,
+    "outDir": "build",
+    "rootDir": "..",
+    "sourceMap": true,
+    "skipLibCheck": true
+  },
+  "include": ["*.ts", "../src/core/**/*.ts", "../src/sync/protocol.ts"]
+}
